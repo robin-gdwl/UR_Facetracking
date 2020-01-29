@@ -1,0 +1,10 @@
+2020-01-29 21:58:30,209 - URBasic_realTimeClientEvent - ERROR - Program re-sending timed out - Could not send program!
+2020-01-29 21:58:30,961 - URBasic_realTimeClientEvent - ERROR - SendProgram: Program Stopped but not finiched!!!
+2020-01-29 21:58:34,959 - URBasic_realTimeClientEvent - ERROR - SendProgram: Program Stopped but not finiched!!!
+2020-01-29 21:58:35,768 - URBasic_realTimeClientEvent - ERROR - SendProgram: Program Stopped but not finiched!!!
+2020-01-29 21:58:36,303 - URBasic_rtdeEvent - ERROR - Lost some RTDE at 1236.84 - 16.000000000076398 milliseconds since last package
+2020-01-29 21:58:36,591 - URBasic_realTimeClientEvent - ERROR - SendProgram: Program Stopped but not finiched!!!
+2020-01-29 21:58:37,398 - URBasic_realTimeClientEvent - ERROR - SendProgram: Program Stopped but not finiched!!!
+2020-01-29 21:58:38,202 - URBasic_realTimeClientEvent - ERROR - SendProgram: Program Stopped but not finiched!!!
+2020-01-29 21:58:39,011 - URBasic_realTimeClientEvent - ERROR - SendProgram: Program Stopped but not finiched!!!
+2020-01-29 21:58:40,097 - URBasic_realTimeClientEvent - ERROR - SendProgram: Program Stopped but not finiched!!!

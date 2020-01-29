@@ -7,6 +7,7 @@
 import numpy as np
 from numpy import linalg
 
+import math3d as m3d
 import cmath
 import math
 from math import cos as cos
@@ -17,12 +18,12 @@ from math import asin as asin
 from math import sqrt as sqrt
 from math import pi as pi
 
-class Toolpath:
+class Kinematic:
 
     def __init__(self, coordinates=[], tool_length=0):
         #self.coordinates = coordinates
-        self.poses = []
-        self.ischecked = False
+        #self.poses = []
+        #self.ischecked = False
 
         self.mat = np.matrix
         # ****** Coefficients ******
@@ -150,18 +151,14 @@ class Toolpath:
     # ************************************************** INVERSE KINEMATICS
 
     def invKine(self, desired_pos, start_pos):  # T60
+
+        desired_pos = m3d.Transform(desired_pos)
+        desired_pos = desired_pos.matrix
+        print("desired pos: ", desired_pos)
         th = self.mat(np.zeros((6, 8)))
         P_05 = (desired_pos * self.mat([0, 0, -self.d6, 1]).T - self.mat([0, 0, 0, 1]).T)
-
+        print(self.d4 / sqrt(P_05[2 - 1, 0] * P_05[2 - 1, 0] + P_05[1 - 1, 0] * P_05[1 - 1, 0]))
         # **** theta1 ****
-        """ from visose robots.gh:
-            https://github.com/visose/Robots/blob/3787a04e41ed60832ccc880ec4ab677b3fe9d9a2/Robots/Kinematics.cs#L310
-        transform= the desired position
-        double A = d[5] * transform[1, 2] - transform[1, 3];
-        double B = d[5] * transform[0, 2] - transform[0, 3];
-        double R = A * A + B * B;
-        double arccos = Acos(d[3] / Sqrt(R));
-        double arctan = Atan2(-B, A);"""
 
         R = (P_05[2 - 1, 0] * P_05[2 - 1, 0] + P_05[1 - 1, 0] * P_05[1 - 1, 0])
         psi = atan2(P_05[2 - 1, 0],  P_05[1 - 1, 0])
@@ -173,8 +170,8 @@ class Toolpath:
         th[0, 0:4] = pi / 2 + psi + phi
         th[0, 4:8] = pi / 2 + psi - phi
         th = th.real
-        print("th___")
-        print(th)
+        #print("th___")
+        #print(th)
 
         # **** theta5 ****
 

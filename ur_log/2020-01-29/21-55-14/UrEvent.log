@@ -1,0 +1,2 @@
+2020-01-29 21:55:19,018 - URBasic_realTimeClientEvent - ERROR - Program re-sending timed out - Could not send program!
+2020-01-29 21:55:19,770 - URBasic_realTimeClientEvent - ERROR - SendProgram: Program Stopped but not finiched!!!

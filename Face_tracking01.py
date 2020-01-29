@@ -4,8 +4,10 @@ import sys
 import cv2
 import time
 from imutils.video import VideoStream
+from Kinematics import Kinematic
+import math3d as m3d
 
-"""# imports for visualisation purposes
+# imports for visualisation purposes
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
@@ -15,7 +17,7 @@ ax = fig.add_subplot(111, projection='3d')
 plt.ylim(-100,100)
 plt.xlim(-100,100)
 ax.set_zlim(-100,100)
-"""
+
 
 # Setup and variables
 RASPBERRY_BOOL = False
@@ -43,12 +45,12 @@ time.sleep(0.2)
 
 angle_multiplier = 0.01
 
-"""host = '192.168.0.113'   #E.g. a Universal Robot offline simulator, please adjust to match your IP
+host = '172.23.4.26'   #E.g. a Universal Robot offline simulator, please adjust to match your IP
 acc = 0.9
 vel = 0.9
 robotModel = URBasic.robotModel.RobotModel()
 robot = URBasic.urScriptExt.UrScriptExt(host=host,robotModel=robotModel)
-robot.reset_error()"""
+robot.reset_error()
 
 
 def find_faces_in_frame(frame):
@@ -136,19 +138,21 @@ def convert_angles_to_xyz(t,s):
 
     x = sphere_radius * math.cos(s) * math.sin(t)
     y = sphere_radius * math.sin(s) * math.sin(t)
-    z = sphere_radius * math.cos(t)
+    z = sphere_radius * math.cos(t) + 0
 
     return [x, y, z]
 
+def offset_from_sphere_center(sphere_cent, x,y,z):
+    pass
 
 # Actual Process
 # Move robot to 0 Position
-#robot.movej(q=[-3.14,-1.,0.5, -1.,-1.5,0], a=acc, v=vel)
-#time.sleep(20)
+robot.movej(q=[0,-math.pi/2, math.pi/2, math.pi, -math.pi/2, 0], a=acc, v=vel)
+time.sleep(2)
 
 robot_position = [0,0]  # Robot Position as Angles in Radians
-sphere_center = [0,0,0]
-sphere_radius = 100
+sphere_center = [0,0,0.2]
+sphere_radius = 0.6
 video_asp_ratio  = video_resolution[0] / video_resolution[1]  # Aspect ration of each frame
 video_viewangle_hor = math.radians(45)  # Camera FOV (field of fiew) angle in radians in horizontal direction
 video_viewangle_vert = video_viewangle_hor / video_asp_ratio  #  Camera FOV (field of fiew) angle in radians in vertical direction
@@ -156,15 +160,16 @@ video_viewangle_vert = video_viewangle_hor / video_asp_ratio  #  Camera FOV (fie
 angle_per_pixel = video_viewangle_hor / video_resolution[0]  # how big of an angle is needed to cover a distance of pixels
 print(video_viewangle_hor)
 
-max_t = math.radians(180)
-max_s = math.radians(180)
+max_t = math.radians(90)
+max_s = math.radians(90)
 print("max t,s  :  ", max_t, max_s)
 
-#ax.scatter(0,0,0, marker="")
+ax.scatter(10,0,0, marker="^")
 i = 0
 #def runloop(i,robot_position):
+kinematics = Kinematic()
 
-
+robot.init_realtime_control()
 while True:
     frame = vs.read()
     face_positions, new_frame = find_faces_in_frame(frame)
@@ -186,11 +191,28 @@ while True:
 
         x,y,z = convert_angles_to_xyz(robot_target_angles[0],robot_target_angles[1])
         #ax.scatter(x, y, z, marker="o")
+        xyz_coords = m3d.Transform([x,y,z,0,0,0])
+        rotation = m3d.Orientation([0, math.pi/2, 0])
+        rotated_xyz = xyz_coords * rotation
         i+=1
         #plt.gcf().show()
-        print()
+        coordinates = rotated_xyz
+        print("coordinates:", coordinates)
+        print("_______"*20)
+
+        qnear= robot.get_actual_joint_positions()
+        print(list(qnear))
+        #next_pose = robot.get_inverse_kin(coordinates,list(qnear))
+
+        next_pose = kinematics.invKine(coordinates, qnear)
+        print(next_pose)
+        robot.set_realtime_pose(next_pose)
 
     frame_with_vis = draw_angle_vis(new_frame,robot_position)
 
     show_frame(frame_with_vis)
 
+    """if i>250:
+        break"""
+
+plt.show()

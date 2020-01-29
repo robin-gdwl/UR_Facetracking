@@ -1,0 +1,6 @@
+2020-01-29 22:30:07,070 - URBasic_realTimeClientEvent - ERROR - SendProgram: Program Stopped but not finiched!!!
+2020-01-29 22:30:11,996 - URBasic_rtdeEvent - ERROR - Lost some RTDE at 2935.096 - 16.000000000076398 milliseconds since last package
+2020-01-29 22:30:12,644 - URBasic_rtdeEvent - ERROR - Lost some RTDE at 2935.52 - 16.000000000076398 milliseconds since last package
+2020-01-29 22:30:13,828 - URBasic_rtdeEvent - ERROR - Lost some RTDE at 2936.312 - 56.00000000004002 milliseconds since last package
+2020-01-29 22:30:14,125 - URBasic_rtdeEvent - ERROR - Lost some RTDE at 2936.504 - 32.000000000152795 milliseconds since last package
+2020-01-29 22:30:18,128 - URBasic_rtdeEvent - ERROR - Lost some RTDE at 2938.912 - 16.000000000076398 milliseconds since last package
