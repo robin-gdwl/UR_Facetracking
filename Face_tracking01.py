@@ -46,7 +46,7 @@ time.sleep(0.2)
 
 angle_multiplier = 0.01
 
-host = '172.23.4.26'   #E.g. a Universal Robot offline simulator, please adjust to match your IP
+host = '172.22.4.105'   #E.g. a Universal Robot offline simulator, please adjust to match your IP
 acc = 0.9
 vel = 0.9
 print("initialising robot")
@@ -224,15 +224,15 @@ def convert_rpy(angles):
 
 def check_max_xy(xy_coord):
     x_y = [0, 0]
-    print("xy before conversion: ", xy_coord)
+    #print("xy before conversion: ", xy_coord)
 
     if -max_x <= xy_coord[0] <= max_x:  # checks if the resulting angle would be outside of max viewangle
         x_y[0] = xy_coord[0]
     elif -max_x > xy_coord[0]:
-        print("0 - angle too small")
+        #print("0 - angle too small")
         x_y[0] = -max_x
     elif max_x < xy_coord[0]:
-        print("0 - angle too big")
+        #print("0 - angle too big")
         x_y[0] = max_x
     else:
         raise Exception(" x is wrong somehow:", xy_coord[0], -max_x, max_x)
@@ -240,14 +240,14 @@ def check_max_xy(xy_coord):
     if -max_y <= xy_coord[1] <= max_y:  # checks if the resulting angle would be outside of max viewangle
         x_y[1] = xy_coord[1]
     elif -max_y > xy_coord[1]:
-        print("y too small")
+        #print("y too small")
         x_y[1] = -max_y
     elif max_y < xy_coord[1]:
-        print("y too big")
+        #print("y too big")
         x_y[1] = max_y
     else:
         raise Exception(" y is wrong somehow", xy_coord[1], max_y)
-    print("xy after conversion: ", x_y)
+    #print("xy after conversion: ", x_y)
     return x_y
 
 def set_lookorigin():
@@ -285,20 +285,21 @@ origin = set_lookorigin()
 
 robot.init_realtime_control()
 while True:
+    timer = time.time()
     frame = vs.read()
     face_positions, new_frame = find_faces_in_frame(frame)
     face_from_center = [0,0]  # TODO: make sure this doesnt block a wandering lookaround
     if len(face_positions) > 0:
 
         face_from_center = list(face_positions[0])  # TODO: find way of making the selected face persistent
-        print(face_from_center)
+        #print(face_from_center)
         scaled_face_pos = [c * m_per_pixel for c in face_from_center]
 
         robot_target_xy = [a+b for a,b in zip(robot_position,scaled_face_pos)]
-        print("..", robot_target_xy)
+        #print("..", robot_target_xy)
 
         robot_target_xy= check_max_xy(robot_target_xy)
-        print("robot max checked", robot_target_xy)
+        #print("robot max checked", robot_target_xy)
 
         robot_position = robot_target_xy
 
@@ -314,33 +315,28 @@ while True:
 
         x_rot = x_pos_perc * hor_rot_max
         y_rot = y_pos_perc * vert_rot_max *-1
-        print(x_rot, y_rot)
+        #print(x_rot, y_rot)
 
         tcp_rotation_rpy = [y_rot,x_rot,0 ]
-        tcp_rotation_rvec = convert_rpy(tcp_rotation_rpy)
-        tcp_orient = m3d.Orientation(tcp_rotation_rvec)
-        print(tcp_orient)
+        #tcp_rotation_rvec = convert_rpy(tcp_rotation_rpy)
+        tcp_orient = m3d.Orientation.new_euler(tcp_rotation_rpy,encoding='XYZ')
+        #print(tcp_orient)
         position_vec_coords = m3d.Transform(tcp_orient, xyz_coords)
 
         oriented_xyz = origin * position_vec_coords
         oriented_xyz_coord = oriented_xyz.get_pose_vector()
 
-
-        i+=1
-        #plt.gcf().show()
         coordinates = oriented_xyz_coord
-
-        print("coordinates:", coordinates)
-        print("_______"*20)
+        #print("coordinates:", coordinates)
+        #print("_______"*20)
 
         qnear= robot.get_actual_joint_positions()
-        print(list(qnear))
+        #print(list(qnear))
         next_pose = coordinates
-        #next_pose = robot.get_inverse_kin(coordinates,list(qnear))
-        #next_pose = kinematics.invKine(coordinates, qnear)
-        print(next_pose)
+        #print(next_pose)
         robot.set_realtime_pose(next_pose)
 
     frame_with_vis = draw_angle_vis(new_frame,robot_position)
-
     show_frame(frame_with_vis)
+    new_time = time.time() -timer
+    print(new_time)
