@@ -9,3 +9,4 @@ dir_to_ignore/ur_log
 dir_to_ignore/.idea
 dir_to_ignore/idea
 .idea/workspace.xml
+.idea/workspace.xml

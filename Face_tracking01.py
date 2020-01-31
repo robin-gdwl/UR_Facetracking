@@ -264,28 +264,23 @@ robot.movej(q=[
     math.radians(179.94),
     math.radians(-93.38),
     0], a=acc, v=vel)
-on_sphere_surface = robot.get_actual_tcp_pose()
 
 robot_position = [0,0]  # Robot Position as Angles in Radians
-sphere_center = [0,0,on_sphere_surface[2]]
-print("sphere_center = ", sphere_center)
-
-sphere_radius = math.sqrt(on_sphere_surface[0]**2 + on_sphere_surface[1]**2)  # Radius is the hypothenuse on a triangle with the sides x and y
-print("sphere_radius = ", sphere_radius)
 
 video_asp_ratio  = video_resolution[0] / video_resolution[1]  # Aspect ration of each frame
 video_viewangle_hor = math.radians(25)  # Camera FOV (field of fiew) angle in radians in horizontal direction
 video_viewangle_vert = video_viewangle_hor / video_asp_ratio  #  Camera FOV (field of fiew) angle in radians in vertical direction
-
-#m_per_pixel = video_viewangle_hor / video_resolution[0]  # how big of an angle is needed to cover a distance of pixels
 m_per_pixel = 00.0001
 
 #ax.scatter(10,0,0, marker="^")
 i = 0
 #def runloop(i,robot_position):
 kinematics = Kinematic()
-max_x = 0.3
+max_x = 0.2
 max_y = 0.2
+hor_rot_max = math.radians(40)
+vert_rot_max = math.radians(20)
+
 origin = set_lookorigin()
 
 robot.init_realtime_control()
@@ -314,10 +309,18 @@ while True:
         z= 0
         xyz_coords = m3d.Vector(x,y,z)
 
+        x_pos_perc = x / max_x
+        y_pos_perc = y / max_y
+
+        x_rot = x_pos_perc * hor_rot_max *-1
+        y_rot = y_pos_perc * vert_rot_max *-1
+        print(x_rot, y_rot)
         oriented_xyz = origin * xyz_coords
         oriented_xyz_coord = oriented_xyz.get_list()
 
-        tcp_rotation_rpy =  [-math.pi/2, 0, 0]
+
+
+        tcp_rotation_rpy =  [-math.pi/2 + y_rot, 0, x_rot]
         #tcp_rotation_rvec = robot.rpy2rotvec(tcp_rotation_rpy)
         tcp_rotation_rvec = convert_rpy(tcp_rotation_rpy)
         oriented_xyz_coord.extend(tcp_rotation_rvec)
@@ -339,7 +342,3 @@ while True:
     frame_with_vis = draw_angle_vis(new_frame,robot_position)
 
     show_frame(frame_with_vis)
-
-
-
-#plt.show()
