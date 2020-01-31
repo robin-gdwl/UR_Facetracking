@@ -8,16 +8,16 @@ from imutils.video import VideoStream
 from Kinematics import Kinematic
 import math3d as m3d
 
-# imports for visualisation purposes
+"""# imports for visualisation purposes
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
-from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
+from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import"""
 
-fig = plt.figure()
+"""fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
 plt.ylim(-2,2)
 plt.xlim(-2,2)
-ax.set_zlim(-2,2)
+ax.set_zlim(-2,2)"""
 
 
 # Setup and variables
@@ -46,7 +46,7 @@ time.sleep(0.2)
 
 angle_multiplier = 0.01
 
-host = '172.22.4.105'   #E.g. a Universal Robot offline simulator, please adjust to match your IP
+host = '172.23.4.26'   #E.g. a Universal Robot offline simulator, please adjust to match your IP
 acc = 0.9
 vel = 0.9
 print("initialising robot")
@@ -107,7 +107,7 @@ def show_frame(frame):
     s = math.asin(y_val / sphere_radius)
 
     return t,s"""
-def check_max_angles(angles):
+"""def check_max_angles(angles):
     s_t = [0,0]
     print("angles before conversion: ", angles)
 
@@ -135,17 +135,14 @@ def check_max_angles(angles):
         raise Exception(" angle 1 is wrong somehow", angles[1], max_t)
     print("angles after conversion: ", s_t)
     return s_t
-
-def convert_angles_to_xyz(t,s):
+"""
+"""def convert_angles_to_xyz(t,s):
 
     x = sphere_radius * math.cos(s) * math.sin(t)
     y = sphere_radius * math.sin(s) * math.sin(t)
     z = sphere_radius * math.cos(t) + 0
 
-    return [x, y, z]
-
-def offset_from_sphere_center(sphere_cent, x,y,z):
-    pass
+    return [x, y, z]"""
 
 
 def convert_rpy(angles):
@@ -225,10 +222,48 @@ def convert_rpy(angles):
     # print(rx, ry, rz)
     return rotation_vec
 
+def check_max_xy(xy_coord):
+    x_y = [0, 0]
+    print("xy before conversion: ", xy_coord)
+
+    if -max_x <= xy_coord[0] <= max_x:  # checks if the resulting angle would be outside of max viewangle
+        x_y[0] = xy_coord[0]
+    elif -max_x > xy_coord[0]:
+        print("0 - angle too small")
+        x_y[0] = -max_x
+    elif max_x < xy_coord[0]:
+        print("0 - angle too big")
+        x_y[0] = max_x
+    else:
+        raise Exception(" x is wrong somehow:", xy_coord[0], -max_x, max_x)
+
+    if -max_y <= xy_coord[1] <= max_y:  # checks if the resulting angle would be outside of max viewangle
+        x_y[1] = xy_coord[1]
+    elif -max_y > xy_coord[1]:
+        print("y too small")
+        x_y[1] = -max_y
+    elif max_y < xy_coord[1]:
+        print("y too big")
+        x_y[1] = max_y
+    else:
+        raise Exception(" y is wrong somehow", xy_coord[1], max_y)
+    print("xy after conversion: ", x_y)
+    return x_y
+
+def set_lookorigin():
+    position = robot.get_actual_tcp_pose()
+    orig = m3d.Transform(position)
+    return orig
 
 # Actual Process
 # Move robot to 0 Position
-robot.movej(q=[-math.pi/2,-math.pi/2, math.pi/2, math.pi, -math.pi/2, 0], a=acc, v=vel)
+robot.movej(q=[
+    math.radians(-86.62),
+    math.radians(-102.94),
+    math.radians(103),
+    math.radians(179.94),
+    math.radians(-93.38),
+    0], a=acc, v=vel)
 on_sphere_surface = robot.get_actual_tcp_pose()
 
 robot_position = [0,0]  # Robot Position as Angles in Radians
@@ -242,56 +277,54 @@ video_asp_ratio  = video_resolution[0] / video_resolution[1]  # Aspect ration of
 video_viewangle_hor = math.radians(25)  # Camera FOV (field of fiew) angle in radians in horizontal direction
 video_viewangle_vert = video_viewangle_hor / video_asp_ratio  #  Camera FOV (field of fiew) angle in radians in vertical direction
 
-angle_per_pixel = video_viewangle_hor / video_resolution[0]  # how big of an angle is needed to cover a distance of pixels
-print(video_viewangle_hor)
+#m_per_pixel = video_viewangle_hor / video_resolution[0]  # how big of an angle is needed to cover a distance of pixels
+m_per_pixel = 00.0001
 
-max_t = math.radians(30)
-max_s = math.radians(30)
-print("max t,s  :  ", max_t, max_s)
-
-ax.scatter(10,0,0, marker="^")
+#ax.scatter(10,0,0, marker="^")
 i = 0
 #def runloop(i,robot_position):
 kinematics = Kinematic()
+max_x = 0.3
+max_y = 0.2
+origin = set_lookorigin()
 
 robot.init_realtime_control()
 while True:
     frame = vs.read()
     face_positions, new_frame = find_faces_in_frame(frame)
-    face = [0,0]  # TODO: make sure this doesnt block a wandering lookaround
+    face_from_center = [0,0]  # TODO: make sure this doesnt block a wandering lookaround
     if len(face_positions) > 0:
 
-        face = list(face_positions[0])  # TODO: find way of making the selected face persistent
-        print(face)
-        face[:] = [x * angle_per_pixel for x in face]
-        print(face)
+        face_from_center = list(face_positions[0])  # TODO: find way of making the selected face persistent
+        print(face_from_center)
+        scaled_face_pos = [c * m_per_pixel for c in face_from_center]
 
-        robot_target_xy = [a+b for a,b in zip(robot_position,face)]
-        print(robot_target_xy)
+        robot_target_xy = [a+b for a,b in zip(robot_position,scaled_face_pos)]
+        print("..", robot_target_xy)
 
-        robot_target_angles = check_max_angles(robot_target_xy)
-        print(robot_target_angles)
+        robot_target_xy= check_max_xy(robot_target_xy)
+        print("robot max checked", robot_target_xy)
 
-        robot_position = robot_target_angles
+        robot_position = robot_target_xy
 
-        x,y,z = convert_angles_to_xyz(robot_target_angles[0],robot_target_angles[1]+math.pi/2)
+        #x,y,z = convert_angles_to_xyz(robot_target_angles[0],robot_target_angles[1]+math.pi/2)
         #ax.scatter(x, y, z, marker="o")
+        x= robot_target_xy[0]
+        y= robot_target_xy[1]
+        z= 0
         xyz_coords = m3d.Vector(x,y,z)
 
-        rot_orient = m3d.Orientation.new_axis_angle((1, 0, 0), -math.pi/2)
-        rot_vector = m3d.Vector(sphere_center)
-        rotation_transform = m3d.Transform(rot_orient, rot_vector)
+        oriented_xyz = origin * xyz_coords
+        oriented_xyz_coord = oriented_xyz.get_list()
 
-        rotated_xyz = rotation_transform * xyz_coords
-        rotated_xyz_coord = rotated_xyz.get_list()
-
-        tcp_rotation_rpy =  [-math.pi/2, 0, 0 + robot_position[1] ]
+        tcp_rotation_rpy =  [-math.pi/2, 0, 0]
         #tcp_rotation_rvec = robot.rpy2rotvec(tcp_rotation_rpy)
         tcp_rotation_rvec = convert_rpy(tcp_rotation_rpy)
-        rotated_xyz_coord.extend(tcp_rotation_rvec)
+        oriented_xyz_coord.extend(tcp_rotation_rvec)
         i+=1
         #plt.gcf().show()
-        coordinates = rotated_xyz_coord
+        coordinates = oriented_xyz_coord
+
         print("coordinates:", coordinates)
         print("_______"*20)
 
@@ -299,7 +332,6 @@ while True:
         print(list(qnear))
         next_pose = coordinates
         #next_pose = robot.get_inverse_kin(coordinates,list(qnear))
-
         #next_pose = kinematics.invKine(coordinates, qnear)
         print(next_pose)
         robot.set_realtime_pose(next_pose)
@@ -308,7 +340,6 @@ while True:
 
     show_frame(frame_with_vis)
 
-    if i>250:
-        break
 
-plt.show()
+
+#plt.show()
