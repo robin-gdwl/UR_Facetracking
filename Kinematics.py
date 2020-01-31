@@ -151,13 +151,13 @@ class Kinematic:
     # ************************************************** INVERSE KINEMATICS
 
     def invKine(self, desired_pos, start_pos):  # T60
-
-        desired_pos = m3d.Transform(desired_pos)
-        desired_pos = desired_pos.matrix
-        print("desired pos: ", desired_pos)
+        des_pos = desired_pos
+        des_pos = m3d.Transform(des_pos)
+        des_pos = des_pos.matrix
+        #print("desired pos: ", desired_pos)
         th = self.mat(np.zeros((6, 8)))
-        P_05 = (desired_pos * self.mat([0, 0, -self.d6, 1]).T - self.mat([0, 0, 0, 1]).T)
-        print(self.d4 / sqrt(P_05[2 - 1, 0] * P_05[2 - 1, 0] + P_05[1 - 1, 0] * P_05[1 - 1, 0]))
+        P_05 = (des_pos * self.mat([0, 0, -self.d6, 1]).T - self.mat([0, 0, 0, 1]).T)
+        #print(self.d4 / sqrt(P_05[2 - 1, 0] * P_05[2 - 1, 0] + P_05[1 - 1, 0] * P_05[1 - 1, 0]))
         # **** theta1 ****
 
         R = (P_05[2 - 1, 0] * P_05[2 - 1, 0] + P_05[1 - 1, 0] * P_05[1 - 1, 0])
@@ -179,7 +179,7 @@ class Kinematic:
         for i in range(0, len(cl)):
             c = cl[i]
             T_10 = linalg.inv(self.AH(1, th, c))
-            T_16 = T_10 * desired_pos
+            T_16 = T_10 * des_pos
             th[4, c:c + 2] = + acos((T_16[2, 3] - self.d4) / self.d6);
             th[4, c + 2:c + 4] = - acos((T_16[2, 3] - self.d4) / self.d6);
 
@@ -192,7 +192,7 @@ class Kinematic:
         for i in range(0, len(cl)):
             c = cl[i]
             T_10 = linalg.inv(self.AH(1, th, c))
-            T_16 = linalg.inv(T_10 * desired_pos)
+            T_16 = linalg.inv(T_10 * des_pos)
             th[5, c:c + 2] = atan2((-T_16[1, 2] / sin(th[4, c])), (T_16[0, 2] / sin(th[4, c])))
 
         th = th.real
@@ -204,7 +204,7 @@ class Kinematic:
             T_10 = linalg.inv(self.AH(1, th, c))
             T_65 = self.AH(6, th, c)
             T_54 = self.AH(5, th, c)
-            T_14 = (T_10 * desired_pos) * linalg.inv(T_54 * T_65)
+            T_14 = (T_10 * des_pos) * linalg.inv(T_54 * T_65)
             P_13 = T_14 * self.mat([0, -self.d4, 0, 1]).T - self.mat([0, 0, 0, 1]).T
             t3 = cmath.acos((linalg.norm(P_13) ** 2 - self.a2 ** 2 - self.a3 ** 2) / (2 * self.a2 * self.a3))  # norm ?
             th[2, c] = t3.real
@@ -218,7 +218,7 @@ class Kinematic:
             T_10 = linalg.inv(self.AH(1, th, c))
             T_65 = linalg.inv(self.AH(6, th, c))
             T_54 = linalg.inv(self.AH(5, th, c))
-            T_14 = (T_10 * desired_pos) * T_65 * T_54
+            T_14 = (T_10 * des_pos) * T_65 * T_54
             P_13 = T_14 * self.mat([0, -self.d4, 0, 1]).T - self.mat([0, 0, 0, 1]).T
 
             # theta 2
@@ -233,8 +233,9 @@ class Kinematic:
         #print(th)
         th = np.transpose(th)
         th = th.tolist()
-        #print(th)
-        #print("___"*30)
+        print("___" * 30)
+        print(th)
+        print("___"*30)
 
         best_th = th
         #best_th = self.select(th, start_pos)

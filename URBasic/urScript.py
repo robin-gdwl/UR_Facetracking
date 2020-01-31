@@ -900,6 +900,28 @@ end
             self.robotConnector.RobotModel.OutputDoubleRegister(5),
         ]
 
+    def rpy2rotvec(self, rpy_vec):
+        # experimental but works...
+
+        print("getting rot_vec")
+
+        prg = """def convert_rpy():
+            rotvec = rpy2rotvec({rpy_vec})
+            write_output_float_register(0, rotvec[0])
+            write_output_float_register(1, rotvec[1])
+            write_output_float_register(2, rotvec[2])
+        end
+        """
+        programString = prg.format(**locals())
+        self.robotConnector.RealTimeClient.SendProgram(programString)
+        self.waitRobotIdleOrStopFlag()
+        self.sync()
+
+        return [
+            self.robotConnector.RobotModel.OutputDoubleRegister(0),
+            self.robotConnector.RobotModel.OutputDoubleRegister(1),
+            self.robotConnector.RobotModel.OutputDoubleRegister(2)]
+
     def get_joint_temp(self,j):
         '''
         Returns the temperature of joint j

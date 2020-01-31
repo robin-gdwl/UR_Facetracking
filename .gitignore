@@ -4,3 +4,8 @@
 .idea/vcs.xml
 .idea/preferred-vcs.xml
 *.idea
+.idea/workspace.xml
+dir_to_ignore/ur_log
+dir_to_ignore/.idea
+dir_to_ignore/idea
+.idea/workspace.xml
