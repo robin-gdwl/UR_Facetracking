@@ -265,7 +265,7 @@ robot.movej(q=[
     math.radians(-93.38),
     0], a=acc, v=vel)
 
-robot_position = [0,0]  # Robot Position as Angles in Radians
+robot_position = [0,0]
 
 video_asp_ratio  = video_resolution[0] / video_resolution[1]  # Aspect ration of each frame
 video_viewangle_hor = math.radians(25)  # Camera FOV (field of fiew) angle in radians in horizontal direction
@@ -312,18 +312,20 @@ while True:
         x_pos_perc = x / max_x
         y_pos_perc = y / max_y
 
-        x_rot = x_pos_perc * hor_rot_max *-1
+        x_rot = x_pos_perc * hor_rot_max
         y_rot = y_pos_perc * vert_rot_max *-1
         print(x_rot, y_rot)
-        oriented_xyz = origin * xyz_coords
-        oriented_xyz_coord = oriented_xyz.get_list()
 
-
-
-        tcp_rotation_rpy =  [-math.pi/2 + y_rot, 0, x_rot]
-        #tcp_rotation_rvec = robot.rpy2rotvec(tcp_rotation_rpy)
+        tcp_rotation_rpy = [y_rot,x_rot,0 ]
         tcp_rotation_rvec = convert_rpy(tcp_rotation_rpy)
-        oriented_xyz_coord.extend(tcp_rotation_rvec)
+        tcp_orient = m3d.Orientation(tcp_rotation_rvec)
+        print(tcp_orient)
+        position_vec_coords = m3d.Transform(tcp_orient, xyz_coords)
+
+        oriented_xyz = origin * position_vec_coords
+        oriented_xyz_coord = oriented_xyz.get_pose_vector()
+
+
         i+=1
         #plt.gcf().show()
         coordinates = oriented_xyz_coord
