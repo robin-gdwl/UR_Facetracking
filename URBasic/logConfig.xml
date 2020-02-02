@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <logConfig>
-    <developerMode>False</developerMode> 
+    <developerMode>True</developerMode>
     <eventLogConfig>					
         <!--<fileMode>Overwrite</fileMode>-->
 		<fileMode>Append</fileMode>

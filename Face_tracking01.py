@@ -4,6 +4,7 @@ import numpy as np
 import sys
 import cv2
 import time
+import imutils
 from imutils.video import VideoStream
 from Kinematics import Kinematic
 import math3d as m3d
@@ -34,7 +35,7 @@ video_midpoint = (
 print(video_midpoint)
 detection_model_path = 'haarcascade_files/haarcascade_frontalface_default.xml'
 face_cascade = cv2.CascadeClassifier(detection_model_path)
-vs = VideoStream(usePiCamera= RASPBERRY_BOOL,
+vs = VideoStream(src= 1 , usePiCamera= RASPBERRY_BOOL,
                               resolution=video_resolution,
                               framerate = 16,
                               meter_mode = "average",
@@ -44,17 +45,42 @@ vs = VideoStream(usePiCamera= RASPBERRY_BOOL,
                               rotation = 180).start()
 time.sleep(0.2)
 
+net = cv2.dnn.readNetFromCaffe("MODELS/deploy.prototxt.txt", "MODELS/res10_300x300_ssd_iter_140000.caffemodel")
+
 angle_multiplier = 0.01
 
-host = '172.22.4.105'   #E.g. a Universal Robot offline simulator, please adjust to match your IP
-acc = 0.9
-vel = 0.9
+host = '192.168.178.20'
+#host = "10.211.55.5"#E.g. a Universal Robot offline simulator, please adjust to match your IP
+acc = 0.8
+vel = 0.6
 print("initialising robot")
 robotModel = URBasic.robotModel.RobotModel()
 robot = URBasic.urScriptExt.UrScriptExt(host=host,robotModel=robotModel)
 robot.reset_error()
 print("robot initialised")
+time.sleep(1)
 
+import cProfile, pstats, io
+
+
+def profile(fnc):
+    """A decorator that uses cProfile to profile a function"""
+
+    def inner(*args, **kwargs):
+        pr = cProfile.Profile()
+        pr.enable()
+        retval = fnc(*args, **kwargs)
+        pr.disable()
+        s = io.StringIO()
+        sortby = 'cumulative'
+        ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+        ps.print_stats()
+        print(s.getvalue())
+        return retval
+
+    return inner
+
+#@profile
 def find_faces_in_frame(frame):
     list_of_facepos = []
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -73,6 +99,68 @@ def find_faces_in_frame(frame):
         cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 3)
     #print(list_of_facepos)
     return list_of_facepos ,frame
+
+
+#@profile
+def find_faces_dnn(image):
+    frame = image
+    #frame = imutils.resize(frame, width=400)
+
+    # grab the frame dimensions and convert it to a blob
+    (h, w) = frame.shape[:2]
+    blob = cv2.dnn.blobFromImage(cv2.resize(frame, (300, 300)), 1.0,
+                                 (300, 300), (104.0, 177.0, 123.0))
+
+    # pass the blob through the network and obtain the detections and
+    # predictions
+    net.setInput(blob)
+    detections = net.forward()
+    face_centers = []
+    # loop over the detections
+    for i in range(0, detections.shape[2]):
+        # extract the confidence (i.e., probability) associated with the
+        # prediction
+        confidence = detections[0, 0, i, 2]
+
+        # filter out weak detections by ensuring the `confidence` is
+        # greater than the minimum confidence
+        if confidence < 0.5:
+            continue
+
+        # compute the (x, y)-coordinates of the bounding box for the
+        # object
+        box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
+        (startX, startY, endX, endY) = box.astype("int")
+
+
+        # draw the bounding box of the face along with the associated
+        # probability
+        text = "{:.2f}%".format(confidence * 100)
+        y = startY - 10 if startY - 10 > 10 else startY + 10
+
+        face_center = (int(startX + (endX - startX) / 2), int(startY + (endY - startY) / 2))
+        position_from_center = (face_center[0] - video_midpoint[0], face_center[1] - video_midpoint[1])
+        face_centers.append(position_from_center)
+
+        cv2.rectangle(frame, (startX, startY), (endX, endY),
+                      (0, 0, 255), 2)
+        cv2.putText(frame, text, (startX, y),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 0, 255), 2)
+        #cv2.putText(frame, str(position_from_center), face_center, 0, 1, (0, 200, 0))
+        cv2.line(frame, video_midpoint, face_center, (0, 200, 0), 5)
+        cv2.circle(frame, face_center, 4, (0, 200, 0), 3)
+
+
+
+    return face_centers, frame
+
+    # show the output frame
+    #cv2.imshow("Frame", frame)
+    #key = cv2.waitKey(1) & 0xFF
+
+    # if the `q` key was pressed, break from the loop
+    """if key == ord("q"):
+        return False"""
 
 def draw_angle_vis(frame, angles):
     center_1 = (100,100)
@@ -96,6 +184,7 @@ def draw_angle_vis(frame, angles):
 
     return frame
 
+#@profile
 def show_frame(frame):
     cv2.imshow('img', frame)
     k = cv2.waitKey(6) & 0xff
@@ -255,6 +344,54 @@ def set_lookorigin():
     orig = m3d.Transform(position)
     return orig
 
+#@profile
+def move_to_face(list_of_positions,robot_pos):
+    print("moving")
+    face_from_center = list(list_of_positions[0])  # TODO: find way of making the selected face persistent
+    # print(face_from_center)
+    prev_robot_pos = robot_pos
+    scaled_face_pos = [c * m_per_pixel for c in face_from_center]
+
+    robot_target_xy = [a + b for a, b in zip(prev_robot_pos, scaled_face_pos)]
+    # print("..", robot_target_xy)
+
+    robot_target_xy = check_max_xy(robot_target_xy)
+    prev_robot_pos = robot_target_xy
+
+    x = robot_target_xy[0]
+    y = robot_target_xy[1]
+    z = 0
+    xyz_coords = m3d.Vector(x, y, z)
+
+    x_pos_perc = x / max_x
+    y_pos_perc = y / max_y
+
+    x_rot = x_pos_perc * hor_rot_max
+    y_rot = y_pos_perc * vert_rot_max * -1
+    # print(x_rot, y_rot)
+
+    tcp_rotation_rpy = [y_rot, x_rot, 0]
+    # tcp_rotation_rvec = convert_rpy(tcp_rotation_rpy)
+    tcp_orient = m3d.Orientation.new_euler(tcp_rotation_rpy, encoding='XYZ')
+    # print(tcp_orient)
+    position_vec_coords = m3d.Transform(tcp_orient, xyz_coords)
+
+    oriented_xyz = origin * position_vec_coords
+    oriented_xyz_coord = oriented_xyz.get_pose_vector()
+
+    coordinates = oriented_xyz_coord
+    # print("coordinates:", coordinates)
+    # print("_______"*20)
+
+    qnear = robot.get_actual_joint_positions()
+    # print(list(qnear))
+    next_pose = coordinates
+    # print(next_pose)
+    print("sending to robot")
+    robot.set_realtime_pose(next_pose)
+    print("sent")
+    return prev_robot_pos
+
 # Actual Process
 # Move robot to 0 Position
 robot.movej(q=[
@@ -270,7 +407,7 @@ robot_position = [0,0]
 video_asp_ratio  = video_resolution[0] / video_resolution[1]  # Aspect ration of each frame
 video_viewangle_hor = math.radians(25)  # Camera FOV (field of fiew) angle in radians in horizontal direction
 video_viewangle_vert = video_viewangle_hor / video_asp_ratio  #  Camera FOV (field of fiew) angle in radians in vertical direction
-m_per_pixel = 00.0001
+m_per_pixel = 00.00003
 
 #ax.scatter(10,0,0, marker="^")
 i = 0
@@ -284,59 +421,32 @@ vert_rot_max = math.radians(20)
 origin = set_lookorigin()
 
 robot.init_realtime_control()
-while True:
-    timer = time.time()
-    frame = vs.read()
-    face_positions, new_frame = find_faces_in_frame(frame)
-    face_from_center = [0,0]  # TODO: make sure this doesnt block a wandering lookaround
-    if len(face_positions) > 0:
+time.sleep(1)
+try:
+    print("starting loop")
+    while True:
+        print("looping")
+        timer = time.time()
+        frame = vs.read()
+        #frame = cv2.rotate(frame,)
+        #face_positions, new_frame = find_faces_in_frame(frame)
+        face_positions, new_frame = find_faces_dnn(frame)
+        #face_from_center = [0,0]  # TODO: make sure this doesnt block a wandering lookaround
+        show_frame(new_frame)
+        if len(face_positions) > 0:
+            robot_position = move_to_face(face_positions,robot_position)
 
-        face_from_center = list(face_positions[0])  # TODO: find way of making the selected face persistent
-        #print(face_from_center)
-        scaled_face_pos = [c * m_per_pixel for c in face_from_center]
 
-        robot_target_xy = [a+b for a,b in zip(robot_position,scaled_face_pos)]
-        #print("..", robot_target_xy)
+        #frame_with_vis = draw_angle_vis(new_frame,robot_position)
 
-        robot_target_xy= check_max_xy(robot_target_xy)
-        #print("robot max checked", robot_target_xy)
+        #show_frame(new_frame)
+        new_time = time.time() -timer
+        print(new_time)
 
-        robot_position = robot_target_xy
+    print("exiting loop")
+except KeyboardInterrupt:
+    print("closing robot connection")
+    robot.close()
 
-        #x,y,z = convert_angles_to_xyz(robot_target_angles[0],robot_target_angles[1]+math.pi/2)
-        #ax.scatter(x, y, z, marker="o")
-        x= robot_target_xy[0]
-        y= robot_target_xy[1]
-        z= 0
-        xyz_coords = m3d.Vector(x,y,z)
-
-        x_pos_perc = x / max_x
-        y_pos_perc = y / max_y
-
-        x_rot = x_pos_perc * hor_rot_max
-        y_rot = y_pos_perc * vert_rot_max *-1
-        #print(x_rot, y_rot)
-
-        tcp_rotation_rpy = [y_rot,x_rot,0 ]
-        #tcp_rotation_rvec = convert_rpy(tcp_rotation_rpy)
-        tcp_orient = m3d.Orientation.new_euler(tcp_rotation_rpy,encoding='XYZ')
-        #print(tcp_orient)
-        position_vec_coords = m3d.Transform(tcp_orient, xyz_coords)
-
-        oriented_xyz = origin * position_vec_coords
-        oriented_xyz_coord = oriented_xyz.get_pose_vector()
-
-        coordinates = oriented_xyz_coord
-        #print("coordinates:", coordinates)
-        #print("_______"*20)
-
-        qnear= robot.get_actual_joint_positions()
-        #print(list(qnear))
-        next_pose = coordinates
-        #print(next_pose)
-        robot.set_realtime_pose(next_pose)
-
-    frame_with_vis = draw_angle_vis(new_frame,robot_position)
-    show_frame(frame_with_vis)
-    new_time = time.time() -timer
-    print(new_time)
+except:
+    robot.close()

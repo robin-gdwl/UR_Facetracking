@@ -401,7 +401,7 @@ class RTDE(threading.Thread): #, metaclass=Singleton
 
         (readable, _, _) = select.select([self.__sock], [], [], DEFAULT_TIMEOUT)
         if (len(readable)):
-            more = self.__sock.recv(16384)
+            more = self.__sock.recv(4096)  # TODO: MAKE THIS 4096 instead of 16384
             if len(more) == 0:
                 self._logger.info("RTDE disconnected")
                 self.__disconnect()
@@ -451,8 +451,8 @@ class RTDE(threading.Thread): #, metaclass=Singleton
                     self.__updateModel(data)
                 elif(packet_command == 0):
                     byte_buffer = bytes()
-            else:
-                print("skipping package - unexpected packet_size - length: " + str(len(byte_buffer)))
+            else:  # TODO: make this so that it still checks the packet content
+                print("skipping package - unexpected packet_size - length: " , str(len(byte_buffer)), str(packet_size), str(packet_command))
                 byte_buffer = bytes()
 
         if len(byte_buffer) != 0:
@@ -487,6 +487,7 @@ class RTDE(threading.Thread): #, metaclass=Singleton
             raise ValueError("We only support protocol version 1 at the moment")
 
     def __decodePayload(self, cmd, payload):
+        #print(cmd)
         '''
         Decode the package received from the Robot
         payload (bytes)
@@ -566,7 +567,7 @@ class RTDE(threading.Thread): #, metaclass=Singleton
             return output
 
         else:
-            self._logger.error('Unknown RTDE command type: ' + chr(cmd))
+            self._logger.error('Unknown RTDE command type: ' + chr(cmd) + str(cmd))
 
 
     def __listEquals(self, l1, l2):
