@@ -16,8 +16,10 @@ License: GPLv3
 _
 
 TODO
-
- [ ] cleanup
- [ ] refactoring
- [ ] documentation
- [ ] comments   
+- [ ] more testing
+- [ ] explanation video
+- [ ] License clarification
+- [ ] cleanup
+- [ ] refactoring
+- [ ] documentation
+- [ ] comments
