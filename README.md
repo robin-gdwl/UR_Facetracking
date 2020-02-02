@@ -3,7 +3,9 @@
 
 Currently under developement as of 02.02.2020
 
-Not ready yet, use at your own risk.
+Not ready yet, use at your own risk. (test it with URsim first)
+
+Run Face_tracking01.py to run the face tracking.
 Developed for a Universal Robot UR5 CB running Polyscope 3.7
 
 heavily relies on this repository:
