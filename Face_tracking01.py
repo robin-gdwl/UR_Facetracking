@@ -6,7 +6,7 @@ import cv2
 import time
 import imutils
 from imutils.video import VideoStream
-from Kinematics import Kinematic
+from UR5Kinematics import Kinematic
 import math3d as m3d
 
 """# imports for visualisation purposes

@@ -1,6 +1,5 @@
 
 .idea/workspace.xml
-.idea/workspace.xml
 .idea/vcs.xml
 .idea/preferred-vcs.xml
 *.idea
@@ -12,7 +11,6 @@ dir_to_ignore/idea
 idea/*
 ur_log/*
 URBasic/_pycache/*
-
 adf.py
 *.pyc
-*.pyc
+Archive/*
