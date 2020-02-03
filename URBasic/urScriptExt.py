@@ -377,7 +377,7 @@ end
                     read_input_float_register(4),
                     read_input_float_register(5)]
            
-        servoj(get_inverse_kin(new_pose), t=.2, lookahead_time= 0.1, gain=250)
+        servoj(get_inverse_kin(new_pose), t=0.2, lookahead_time= 0.1, gain=350)
             
         sync()
     end
