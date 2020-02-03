@@ -184,7 +184,7 @@ def draw_angle_vis(frame, angles):
 
     return frame
 
-#@profile
+@profile
 def show_frame(frame):
     cv2.imshow('img', frame)
     k = cv2.waitKey(6) & 0xff
@@ -435,7 +435,7 @@ try:
         face_positions, new_frame = find_faces_dnn(frame)
         #face_from_center = [0,0]  # TODO: make sure this doesnt block a wandering lookaround
         #print("frame")
-        #show_frame(new_frame)
+        show_frame(new_frame)
         if len(face_positions) > 0:
             robot_position = move_to_face(face_positions,robot_position)
 
