@@ -37,11 +37,11 @@ detection_model_path = 'haarcascade_files/haarcascade_frontalface_default.xml'
 face_cascade = cv2.CascadeClassifier(detection_model_path)
 vs = VideoStream(src= 1 , usePiCamera= RASPBERRY_BOOL,
                               resolution=video_resolution,
-                              framerate = 10,
+                              framerate = 13,
                               meter_mode = "average",
                               exposure_mode ="auto",
                               shutter_speed = 6800,
-                              exposure_compensation = 0,
+                              exposure_compensation = 1,
                               rotation = 0).start()
 time.sleep(0.2)
 
@@ -409,7 +409,7 @@ robot_position = [0,0]
 video_asp_ratio  = video_resolution[0] / video_resolution[1]  # Aspect ration of each frame
 video_viewangle_hor = math.radians(25)  # Camera FOV (field of fiew) angle in radians in horizontal direction
 video_viewangle_vert = video_viewangle_hor / video_asp_ratio  #  Camera FOV (field of fiew) angle in radians in vertical direction
-m_per_pixel = 00.00008
+m_per_pixel = 00.00015
 
 #ax.scatter(10,0,0, marker="^")
 i = 0
