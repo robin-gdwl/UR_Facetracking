@@ -40,7 +40,7 @@ vs = VideoStream(src= 1 , usePiCamera= RASPBERRY_BOOL,
                               framerate = 10,
                               meter_mode = "average",
                               exposure_mode ="auto",
-                              shutter_speed = 5800,
+                              shutter_speed = 6800,
                               exposure_compensation = 0,
                               rotation = 0).start()
 time.sleep(0.2)
