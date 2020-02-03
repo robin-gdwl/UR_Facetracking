@@ -394,13 +394,15 @@ def move_to_face(list_of_positions,robot_pos):
 
 # Actual Process
 # Move robot to 0 Position
-robot.movej(q=[
+"""robot.movej(q=[
     math.radians(-86.62),
     math.radians(-102.94),
     math.radians(103),
     math.radians(179.94),
     math.radians(-93.38),
-    0], a=acc, v=vel)
+    0], a=acc, v=vel)"""
+
+robot.movej(q=(math.radians(-218),math.radians(-63),math.radians(-93),math.radians(-20),math.radians(88),math.radians(0)), a=acc, v=vel )
 
 robot_position = [0,0]
 
