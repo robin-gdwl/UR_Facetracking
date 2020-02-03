@@ -51,8 +51,8 @@ angle_multiplier = 0.01
 
 host = '192.168.178.20'
 #host = "10.211.55.5"#E.g. a Universal Robot offline simulator, please adjust to match your IP
-acc = 0.8
-vel = 0.6
+acc = 0.9
+vel = 0.8
 print("initialising robot")
 robotModel = URBasic.robotModel.RobotModel()
 robot = URBasic.urScriptExt.UrScriptExt(host=host,robotModel=robotModel)
@@ -409,7 +409,7 @@ robot_position = [0,0]
 video_asp_ratio  = video_resolution[0] / video_resolution[1]  # Aspect ration of each frame
 video_viewangle_hor = math.radians(25)  # Camera FOV (field of fiew) angle in radians in horizontal direction
 video_viewangle_vert = video_viewangle_hor / video_asp_ratio  #  Camera FOV (field of fiew) angle in radians in vertical direction
-m_per_pixel = 00.00004
+m_per_pixel = 00.00008
 
 #ax.scatter(10,0,0, marker="^")
 i = 0
