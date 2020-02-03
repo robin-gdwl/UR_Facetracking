@@ -28,7 +28,7 @@ if sys.platform == "linux":
     from picamera.array import PiRGBArray
     RASPBERRY_BOOL = True
 
-video_resolution = (1080, 720)
+video_resolution = (400, 400)
 video_midpoint = (
     int(video_resolution[0]/2),
     int(video_resolution[1]/2))
@@ -37,7 +37,7 @@ detection_model_path = 'haarcascade_files/haarcascade_frontalface_default.xml'
 face_cascade = cv2.CascadeClassifier(detection_model_path)
 vs = VideoStream(src= 1 , usePiCamera= RASPBERRY_BOOL,
                               resolution=video_resolution,
-                              framerate = 16,
+                              framerate = 10,
                               meter_mode = "average",
                               exposure_mode ="auto",
                               shutter_speed = 3800,
