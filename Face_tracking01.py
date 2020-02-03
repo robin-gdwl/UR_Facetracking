@@ -42,7 +42,7 @@ vs = VideoStream(src= 1 , usePiCamera= RASPBERRY_BOOL,
                               exposure_mode ="auto",
                               shutter_speed = 3800,
                               exposure_compensation = -1,
-                              rotation = 180).start()
+                              rotation = 0).start()
 time.sleep(0.2)
 
 net = cv2.dnn.readNetFromCaffe("MODELS/deploy.prototxt.txt", "MODELS/res10_300x300_ssd_iter_140000.caffemodel")
@@ -435,7 +435,7 @@ try:
         face_positions, new_frame = find_faces_dnn(frame)
         #face_from_center = [0,0]  # TODO: make sure this doesnt block a wandering lookaround
         print("frame")
-        show_frame(new_frame)
+        #show_frame(new_frame)
         if len(face_positions) > 0:
             robot_position = move_to_face(face_positions,robot_position)
 
