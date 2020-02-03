@@ -409,7 +409,7 @@ robot_position = [0,0]
 video_asp_ratio  = video_resolution[0] / video_resolution[1]  # Aspect ration of each frame
 video_viewangle_hor = math.radians(25)  # Camera FOV (field of fiew) angle in radians in horizontal direction
 video_viewangle_vert = video_viewangle_hor / video_asp_ratio  #  Camera FOV (field of fiew) angle in radians in vertical direction
-m_per_pixel = 00.00002
+m_per_pixel = 00.00004
 
 #ax.scatter(10,0,0, marker="^")
 i = 0
