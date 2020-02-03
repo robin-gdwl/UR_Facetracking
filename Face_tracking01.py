@@ -40,7 +40,7 @@ vs = VideoStream(src= 1 , usePiCamera= RASPBERRY_BOOL,
                               framerate = 13,
                               meter_mode = "backlit",
                               exposure_mode ="auto",
-                              shutter_speed = 6800,
+                              shutter_speed = 8900,
                               exposure_compensation = 3,
                               rotation = 0).start()
 time.sleep(0.2)
@@ -101,7 +101,7 @@ def find_faces_in_frame(frame):
     return list_of_facepos ,frame
 
 
-@profile
+#@profile
 def find_faces_dnn(image):
     frame = image
     #frame = imutils.resize(frame, width=400)
@@ -184,7 +184,7 @@ def draw_angle_vis(frame, angles):
 
     return frame
 
-@profile
+#@profile
 def show_frame(frame):
     cv2.imshow('img', frame)
     k = cv2.waitKey(6) & 0xff
@@ -344,7 +344,7 @@ def set_lookorigin():
     orig = m3d.Transform(position)
     return orig
 
-@profile
+#@profile
 def move_to_face(list_of_positions,robot_pos):
     #print("moving")
     face_from_center = list(list_of_positions[0])  # TODO: find way of making the selected face persistent
