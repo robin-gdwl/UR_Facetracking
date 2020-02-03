@@ -101,7 +101,7 @@ def find_faces_in_frame(frame):
     return list_of_facepos ,frame
 
 
-#@profile
+@profile
 def find_faces_dnn(image):
     frame = image
     #frame = imutils.resize(frame, width=400)
@@ -344,9 +344,9 @@ def set_lookorigin():
     orig = m3d.Transform(position)
     return orig
 
-#@profile
+@profile
 def move_to_face(list_of_positions,robot_pos):
-    print("moving")
+    #print("moving")
     face_from_center = list(list_of_positions[0])  # TODO: find way of making the selected face persistent
     # print(face_from_center)
     prev_robot_pos = robot_pos
@@ -387,9 +387,9 @@ def move_to_face(list_of_positions,robot_pos):
     # print(list(qnear))
     next_pose = coordinates
     # print(next_pose)
-    print("sending to robot")
+    #print("sending to robot")
     robot.set_realtime_pose(next_pose)
-    print("sent")
+    #print("sent")
     return prev_robot_pos
 
 # Actual Process
