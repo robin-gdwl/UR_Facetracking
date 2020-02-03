@@ -427,14 +427,14 @@ time.sleep(1)
 try:
     print("starting loop")
     while True:
-        print("looping")
-        timer = time.time()
+        #print("looping")
+        #timer = time.time()
         frame = vs.read()
         #frame = cv2.rotate(frame,)
         #face_positions, new_frame = find_faces_in_frame(frame)
         face_positions, new_frame = find_faces_dnn(frame)
         #face_from_center = [0,0]  # TODO: make sure this doesnt block a wandering lookaround
-        print("frame")
+        #print("frame")
         #show_frame(new_frame)
         if len(face_positions) > 0:
             robot_position = move_to_face(face_positions,robot_position)
@@ -443,8 +443,8 @@ try:
         #frame_with_vis = draw_angle_vis(new_frame,robot_position)
 
         #show_frame(new_frame)
-        new_time = time.time() -timer
-        print(new_time)
+        #new_time = time.time() -timer
+        #print(new_time)
 
     print("exiting loop")
 except KeyboardInterrupt:
