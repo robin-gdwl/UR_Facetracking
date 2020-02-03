@@ -372,7 +372,7 @@ def move_to_face(list_of_positions,robot_pos):
 
     tcp_rotation_rpy = [y_rot, x_rot, 0]
     # tcp_rotation_rvec = convert_rpy(tcp_rotation_rpy)
-    tcp_orient = m3d.Orientation.new_euler(tcp_rotation_rpy, encoding='XYZ')
+    tcp_orient = m3d.Orientation.new_euler(tcp_rotation_rpy, encoding='xyz')
     # print(tcp_orient)
     position_vec_coords = m3d.Transform(tcp_orient, xyz_coords)
 
@@ -407,7 +407,7 @@ robot_position = [0,0]
 video_asp_ratio  = video_resolution[0] / video_resolution[1]  # Aspect ration of each frame
 video_viewangle_hor = math.radians(25)  # Camera FOV (field of fiew) angle in radians in horizontal direction
 video_viewangle_vert = video_viewangle_hor / video_asp_ratio  #  Camera FOV (field of fiew) angle in radians in vertical direction
-m_per_pixel = 00.00003
+m_per_pixel = 00.00002
 
 #ax.scatter(10,0,0, marker="^")
 i = 0
@@ -415,8 +415,8 @@ i = 0
 kinematics = Kinematic()
 max_x = 0.2
 max_y = 0.2
-hor_rot_max = math.radians(40)
-vert_rot_max = math.radians(20)
+hor_rot_max = math.radians(50)
+vert_rot_max = math.radians(25)
 
 origin = set_lookorigin()
 
@@ -432,6 +432,7 @@ try:
         #face_positions, new_frame = find_faces_in_frame(frame)
         face_positions, new_frame = find_faces_dnn(frame)
         #face_from_center = [0,0]  # TODO: make sure this doesnt block a wandering lookaround
+        print("frame")
         show_frame(new_frame)
         if len(face_positions) > 0:
             robot_position = move_to_face(face_positions,robot_position)
