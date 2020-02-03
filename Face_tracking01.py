@@ -124,7 +124,7 @@ def find_faces_dnn(image):
 
         # filter out weak detections by ensuring the `confidence` is
         # greater than the minimum confidence
-        if confidence < 0.5:
+        if confidence < 0.4:
             continue
 
         # compute the (x, y)-coordinates of the bounding box for the
