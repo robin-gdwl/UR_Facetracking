@@ -24,6 +24,7 @@ _
 
 TODO
 - [ ] more testing
+- [x] demonstration video
 - [ ] explanation video
 - [ ] License clarification
 - [ ] cleanup
