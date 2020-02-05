@@ -6,7 +6,7 @@ Demonstration: https://www.youtube.com/watch?v=HHb-5dZoPFQ&feature=youtu.be&ab_c
 ![Universal Robot Realtime Face Tracking Python](UR_Facetracking_Demo.jpg)
 
 
-Currently under developement as of 02.02.2020
+Currently under developement as of 05.02.2020
 
 Not ready yet, use at your own risk. (test it with URsim first)
 
