@@ -2,7 +2,7 @@
 
 Currently under developement as of 2020-02-05
 
-### **Not ready yet, use at your own risk.**
+### **Use at your own risk.**
 (test with URsim before connecting a real robot)
 
 
@@ -24,6 +24,20 @@ https://bitbucket.org/RopeRobotics/ur-interface/src/master/
 
 License: GPLv3
 
+
+
+#### Requirements:
+Universal Robot or URsim-software (tested with UR5cb running polyscope 3.7)
+
+python 3.6
+**Python libraries:**
+opencv-python 4.1.2.30
+numpy 1.18.1
+math3d 3.3.5
+imutils 0.5.3
+
+
+
 _
 
 TODO
@@ -31,7 +45,7 @@ TODO
 - [x] demonstration video
 - [ ] explanation video
 - [ ] License clarification
-- [ ] cleanup
+- [x] cleanup
 - [ ] refactoring
 - [ ] documentation
-- [ ] comments
+- [x] comments
