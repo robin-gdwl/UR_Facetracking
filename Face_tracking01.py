@@ -20,29 +20,29 @@ from imutils.video import VideoStream
 import math3d as m3d
 
 """SETTINGS AND VARIABLES ________________________________________________________________"""
+
 RASPBERRY_BOOL = False
 # If this is run on a linux system, a picamera will be used.
-#If you are using a linux system, with a webcam instead of a raspberry pi delete the following if-statement
+# If you are using a linux system, with a webcam instead of a raspberry pi delete the following if-statement
 if sys.platform == "linux":
     import picamera
     from picamera.array import PiRGBArray
     RASPBERRY_BOOL = True
 
-ROBOT_IP = '192.168.178.20'
-ACCELERATION = 0.9  # Robot acelleration value
+ROBOT_IP = '10.211.55.5'
+ACCELERATION = 0.9  # Robot acceleration value
 VELOCITY = 0.8  # Robot speed value
 
 # Path to the face-detection model:
-net = cv2.dnn.readNetFromCaffe("MODELS/deploy.prototxt.txt", "MODELS/res10_300x300_ssd_iter_140000.caffemodel")
+pretrained_model = cv2.dnn.readNetFromCaffe("MODELS/deploy.prototxt.txt", "MODELS/res10_300x300_ssd_iter_140000.caffemodel")
 
-video_resolution = (700, 400)
-video_midpoint = (
-    int(video_resolution[0]/2),
-    int(video_resolution[1]/2))
+video_resolution = (700, 400)  # resolution the video capture will be resized to, smaller sizes can speed up detection
+video_midpoint = (int(video_resolution[0]/2),
+                  int(video_resolution[1]/2))
 video_asp_ratio  = video_resolution[0] / video_resolution[1]  # Aspect ration of each frame
 video_viewangle_hor = math.radians(25)  # Camera FOV (field of fiew) angle in radians in horizontal direction
-video_viewangle_vert = video_viewangle_hor / video_asp_ratio  #  Camera FOV (field of fiew) angle in radians in vertical direction
-m_per_pixel = 00.00009
+#video_viewangle_vert = video_viewangle_hor / video_asp_ratio  #  Camera FOV (field of fiew) angle in radians in vertical direction
+m_per_pixel = 00.00009  # Variable which scales the robot movement from pixels to meters.
 
 max_x = 0.2
 max_y = 0.2
@@ -50,14 +50,15 @@ hor_rot_max = math.radians(50)
 vert_rot_max = math.radians(25)
 
 
-vs = VideoStream(src= 1 , usePiCamera= RASPBERRY_BOOL,
-                              resolution=video_resolution,
-                              framerate = 13,
-                              meter_mode = "backlit",
-                              exposure_mode ="auto",
-                              shutter_speed = 8900,
-                              exposure_compensation = 2,
-                              rotation = 0).start()
+vs = VideoStream(src= 0 ,
+                 usePiCamera= RASPBERRY_BOOL,
+                 resolution=video_resolution,
+                 framerate = 13,
+                 meter_mode = "backlit",
+                 exposure_mode ="auto",
+                 shutter_speed = 8900,
+                 exposure_compensation = 2,
+                 rotation = 0).start()
 time.sleep(0.2)
 
 
@@ -67,6 +68,7 @@ time.sleep(0.2)
 def find_faces_dnn(image):
     """
     Finds human faces in the frame captured by the camera and returns the positions
+    uses the pretrained model located at pretrained_model
 
     Input:
         image: frame captured by the camera
@@ -79,7 +81,7 @@ def find_faces_dnn(image):
     """
 
     frame = image
-    #frame = imutils.resize(frame, width=400)
+    frame = imutils.resize(frame, width= video_resolution[0])
 
     # grab the frame dimensions and convert it to a blob
     (h, w) = frame.shape[:2]
@@ -87,8 +89,12 @@ def find_faces_dnn(image):
                                  (300, 300), (104.0, 177.0, 123.0))
 
     # pass the blob through the network and obtain the detections and predictions
-    net.setInput(blob)
-    detections = net.forward()
+    pretrained_model.setInput(blob)
+
+    # the following line handles the actual face detection
+    # it is the most computationally intensive part of the entire program
+    # TODO: find a quicker face detection model
+    detections = pretrained_model.forward()
     face_centers = []
     # loop over the detections
     for i in range(0, detections.shape[2]):
@@ -127,7 +133,7 @@ def show_frame(frame):
     cv2.imshow('img', frame)
     k = cv2.waitKey(6) & 0xff
 
-def convert_rpy(angles):
+"""def convert_rpy(angles):
 
     # This is very stupid:
     # For some reason this doesnt work if exactly  one value = 0
@@ -203,6 +209,7 @@ def convert_rpy(angles):
     rotation_vec = [rx,ry,rz]
     # print(rx, ry, rz)
     return rotation_vec
+"""
 
 def check_max_xy(xy_coord):
     """
@@ -327,7 +334,7 @@ robot.movej(q=(math.radians(-218),
                math.radians(-93),
                math.radians(-20),
                math.radians(88),
-               math.radians(0)), a=ACCELERATION, v=VELOCITY )
+               math.radians(0)), a= ACCELERATION, v= VELOCITY )
 
 robot_position = [0,0]
 origin = set_lookorigin()
