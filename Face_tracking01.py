@@ -1,3 +1,14 @@
+"""
+Face_tracking01
+Python program for realtime face tracking of a Universal Robot (tested with UR5cb)
+see here for a demonstration: https://youtu.be/HHb-5dZoPFQ
+
+Created by Robin Godwyll
+License: GPL v3 https://www.gnu.org/licenses/gpl-3.0.en.html
+
+
+"""
+
 import URBasic
 import math
 import numpy as np
@@ -6,35 +17,39 @@ import cv2
 import time
 import imutils
 from imutils.video import VideoStream
-from UR5Kinematics import Kinematic
 import math3d as m3d
 
-"""# imports for visualisation purposes
-import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
-from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import"""
-
-"""fig = plt.figure()
-ax = fig.add_subplot(111, projection='3d')
-plt.ylim(-2,2)
-plt.xlim(-2,2)
-ax.set_zlim(-2,2)"""
-
-
-# Setup and variables
+"""SETTINGS AND VARIABLES ________________________________________________________________"""
 RASPBERRY_BOOL = False
+# If this is run on a linux system, a picamera will be used.
+#If you are using a linux system, with a webcam instead of a raspberry pi delete the following if-statement
 if sys.platform == "linux":
     import picamera
     from picamera.array import PiRGBArray
     RASPBERRY_BOOL = True
 
+ROBOT_IP = '192.168.178.20'
+ACCELERATION = 0.9  # Robot acelleration value
+VELOCITY = 0.8  # Robot speed value
+
+# Path to the face-detection model:
+net = cv2.dnn.readNetFromCaffe("MODELS/deploy.prototxt.txt", "MODELS/res10_300x300_ssd_iter_140000.caffemodel")
+
 video_resolution = (700, 400)
 video_midpoint = (
     int(video_resolution[0]/2),
     int(video_resolution[1]/2))
-print(video_midpoint)
-detection_model_path = 'haarcascade_files/haarcascade_frontalface_default.xml'
-face_cascade = cv2.CascadeClassifier(detection_model_path)
+video_asp_ratio  = video_resolution[0] / video_resolution[1]  # Aspect ration of each frame
+video_viewangle_hor = math.radians(25)  # Camera FOV (field of fiew) angle in radians in horizontal direction
+video_viewangle_vert = video_viewangle_hor / video_asp_ratio  #  Camera FOV (field of fiew) angle in radians in vertical direction
+m_per_pixel = 00.00009
+
+max_x = 0.2
+max_y = 0.2
+hor_rot_max = math.radians(50)
+vert_rot_max = math.radians(25)
+
+
 vs = VideoStream(src= 1 , usePiCamera= RASPBERRY_BOOL,
                               resolution=video_resolution,
                               framerate = 13,
@@ -45,64 +60,24 @@ vs = VideoStream(src= 1 , usePiCamera= RASPBERRY_BOOL,
                               rotation = 0).start()
 time.sleep(0.2)
 
-net = cv2.dnn.readNetFromCaffe("MODELS/deploy.prototxt.txt", "MODELS/res10_300x300_ssd_iter_140000.caffemodel")
-
-angle_multiplier = 0.01
-
-host = '192.168.178.20'
-#host = "10.211.55.5"#E.g. a Universal Robot offline simulator, please adjust to match your IP
-acc = 0.9
-vel = 0.8
-print("initialising robot")
-robotModel = URBasic.robotModel.RobotModel()
-robot = URBasic.urScriptExt.UrScriptExt(host=host,robotModel=robotModel)
-robot.reset_error()
-print("robot initialised")
-time.sleep(1)
-
-import cProfile, pstats, io
 
 
-def profile(fnc):
-    """A decorator that uses cProfile to profile a function"""
+"""FUNCTIONS _____________________________________________________________________________"""
 
-    def inner(*args, **kwargs):
-        pr = cProfile.Profile()
-        pr.enable()
-        retval = fnc(*args, **kwargs)
-        pr.disable()
-        s = io.StringIO()
-        sortby = 'cumulative'
-        ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-        ps.print_stats()
-        print(s.getvalue())
-        return retval
-
-    return inner
-
-#@profile
-def find_faces_in_frame(frame):
-    list_of_facepos = []
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    faces = face_cascade.detectMultiScale(gray, 1.1, 4)
-    #TODO: make it so that it is not as important if a face is not recognised in 1 or 2 frames
-    for (x, y, w, h) in faces:
-        face_center = (int(x+ w*0.5), int(y+ h*0.5))
-        position_from_center = [face_center[0] - video_midpoint[0] , face_center[1] - video_midpoint[1]]
-
-
-        list_of_facepos.append(position_from_center)
-        # draw information about the face on the frame
-        cv2.putText(frame, str(position_from_center), face_center, 0, 1, (0,200,0))
-        cv2.line(frame, video_midpoint, face_center, (0,200,0), 5)
-        cv2.circle(frame, face_center, 4, (0,200,0), 3)
-        cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 3)
-    #print(list_of_facepos)
-    return list_of_facepos ,frame
-
-
-#@profile
 def find_faces_dnn(image):
+    """
+    Finds human faces in the frame captured by the camera and returns the positions
+
+    Input:
+        image: frame captured by the camera
+
+    Return Values:
+        face_centers: list of center positions of all detected faces
+            list of lists with 2 values (x and y)
+        frame: new frame resized with boxes and probabilities drawn around all faces
+
+    """
+
     frame = image
     #frame = imutils.resize(frame, width=400)
 
@@ -111,15 +86,13 @@ def find_faces_dnn(image):
     blob = cv2.dnn.blobFromImage(cv2.resize(frame, (300, 300)), 1.0,
                                  (300, 300), (104.0, 177.0, 123.0))
 
-    # pass the blob through the network and obtain the detections and
-    # predictions
+    # pass the blob through the network and obtain the detections and predictions
     net.setInput(blob)
     detections = net.forward()
     face_centers = []
     # loop over the detections
     for i in range(0, detections.shape[2]):
-        # extract the confidence (i.e., probability) associated with the
-        # prediction
+        # extract the confidence (i.e., probability) associated with the prediction
         confidence = detections[0, 0, i, 2]
 
         # filter out weak detections by ensuring the `confidence` is
@@ -127,14 +100,12 @@ def find_faces_dnn(image):
         if confidence < 0.4:
             continue
 
-        # compute the (x, y)-coordinates of the bounding box for the
-        # object
+        # compute the (x, y)-coordinates of the bounding box for the object
         box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
         (startX, startY, endX, endY) = box.astype("int")
 
 
-        # draw the bounding box of the face along with the associated
-        # probability
+        # draw the bounding box of the face along with the associated probability
         text = "{:.2f}%".format(confidence * 100)
         y = startY - 10 if startY - 10 > 10 else startY + 10
 
@@ -150,89 +121,11 @@ def find_faces_dnn(image):
         cv2.line(frame, video_midpoint, face_center, (0, 200, 0), 5)
         cv2.circle(frame, face_center, 4, (0, 200, 0), 3)
 
-
-
     return face_centers, frame
 
-    # show the output frame
-    #cv2.imshow("Frame", frame)
-    #key = cv2.waitKey(1) & 0xFF
-
-    # if the `q` key was pressed, break from the loop
-    """if key == ord("q"):
-        return False"""
-
-def draw_angle_vis(frame, angles):
-    center_1 = (100,100)
-    center_2 = (100,300)
-    radius = 100
-    s = angles[0]
-    t = angles[1]
-    cv2.circle(frame, center_1, radius, (0, 250, 0), 6)
-    cv2.circle(frame, center_2, radius, (0, 0, 250), 6)
-
-    #s-angle
-    sx = center_1[0] + (radius * math.cos(s))
-    sy = center_1[1] + (radius * math.sin(s))
-    cv2.circle(frame, (int(sx),int(sy)), 4, (200, 200, 0), 5)
-    cv2.line
-
-    #t-angle
-    tx = center_2[0] + (radius * math.cos(t))
-    ty = center_2[1] + (radius * math.sin(t))
-    cv2.circle(frame, (int(tx), int(ty)), 4, (200, 200, 0), 5)
-
-    return frame
-
-#@profile
 def show_frame(frame):
     cv2.imshow('img', frame)
     k = cv2.waitKey(6) & 0xff
-
-"""def convert_robot_target_to_angles(rob_target):
-    x_val = rob_target[0]
-    y_val = rob_target[1]
-    t = math.asin(x_val / sphere_radius)
-    s = math.asin(y_val / sphere_radius)
-
-    return t,s"""
-"""def check_max_angles(angles):
-    s_t = [0,0]
-    print("angles before conversion: ", angles)
-
-    if -max_s <= angles[0] <= max_s:  # checks if the resulting angle would be outside of max viewangle
-        s_t[0] = angles[0]
-    elif -max_s > angles[0]:
-        print("0 - angle too small")
-        s_t[0] = -max_s
-    elif max_s < angles[0]:
-        print("0 - angle too big")
-        s_t[0] = max_s
-    else:
-        raise Exception(" angle 0 is wrong somehow:", angles[0] , -max_s, max_s)
-
-
-    if -max_t <= angles[1] <= max_t:  # checks if the resulting angle would be outside of max viewangle
-        s_t[1] = angles[1]
-    elif -max_t > angles[1]:
-        print("1 - angle too small")
-        s_t[1] = -max_t
-    elif max_t < angles[1]:
-        print("1 - angle too big")
-        s_t[1] = max_t
-    else:
-        raise Exception(" angle 1 is wrong somehow", angles[1], max_t)
-    print("angles after conversion: ", s_t)
-    return s_t
-"""
-"""def convert_angles_to_xyz(t,s):
-
-    x = sphere_radius * math.cos(s) * math.sin(t)
-    y = sphere_radius * math.sin(s) * math.sin(t)
-    z = sphere_radius * math.cos(t) + 0
-
-    return [x, y, z]"""
-
 
 def convert_rpy(angles):
 
@@ -312,43 +205,75 @@ def convert_rpy(angles):
     return rotation_vec
 
 def check_max_xy(xy_coord):
+    """
+    Checks if the face is outside of the predefined maximum values on the lookaraound plane
+
+    Inputs:
+        xy_coord: list of 2 values: x and y value of the face in the lookaround plane.
+            These values will be evaluated against max_x and max_y
+
+    Return Value:
+        x_y: new x and y values
+            if the values were within the maximum values (max_x and max_y) these are the same as the input.
+            if one or both of the input values were over the maximum, the maximum will be returned instead
+    """
+
     x_y = [0, 0]
     #print("xy before conversion: ", xy_coord)
 
-    if -max_x <= xy_coord[0] <= max_x:  # checks if the resulting angle would be outside of max viewangle
+    if -max_x <= xy_coord[0] <= max_x:
+        # checks if the resulting position would be outside of max_x
         x_y[0] = xy_coord[0]
     elif -max_x > xy_coord[0]:
-        #print("0 - angle too small")
         x_y[0] = -max_x
     elif max_x < xy_coord[0]:
-        #print("0 - angle too big")
         x_y[0] = max_x
     else:
         raise Exception(" x is wrong somehow:", xy_coord[0], -max_x, max_x)
 
-    if -max_y <= xy_coord[1] <= max_y:  # checks if the resulting angle would be outside of max viewangle
+    if -max_y <= xy_coord[1] <= max_y:
+        # checks if the resulting position would be outside of max_y
         x_y[1] = xy_coord[1]
     elif -max_y > xy_coord[1]:
-        #print("y too small")
         x_y[1] = -max_y
     elif max_y < xy_coord[1]:
-        #print("y too big")
         x_y[1] = max_y
     else:
         raise Exception(" y is wrong somehow", xy_coord[1], max_y)
     #print("xy after conversion: ", x_y)
+
     return x_y
 
 def set_lookorigin():
+    """
+    Creates a new coordinate system at the current robot tcp position.
+    This coordinate system is the basis of the face following.
+    It describes the midpoint of the plane in which the robot follows faces.
+
+    Return Value:
+        orig: math3D Transform Object
+            characterises location and rotation of the new coordinate system in reference to the base coordinate system
+
+    """
     position = robot.get_actual_tcp_pose()
     orig = m3d.Transform(position)
     return orig
 
-#@profile
-def move_to_face(list_of_positions,robot_pos):
-    #print("moving")
-    face_from_center = list(list_of_positions[0])  # TODO: find way of making the selected face persistent
-    # print(face_from_center)
+def move_to_face(list_of_facepos,robot_pos):
+    """
+    Function that moves the robot to the position of the face
+
+    Inputs:
+        list_of_facepos: a list of face positions captured by the camera, only the first face will be used
+        robot_pos: position of the robot in 2D - coordinates
+
+    Return Value:
+        prev_robot_pos: 2D robot position the robot will move to. The basis for the next call to this funtion as robot_pos
+    """
+
+
+    face_from_center = list(list_of_facepos[0])  # TODO: find way of making the selected face persistent
+
     prev_robot_pos = robot_pos
     scaled_face_pos = [c * m_per_pixel for c in face_from_center]
 
@@ -368,87 +293,62 @@ def move_to_face(list_of_positions,robot_pos):
 
     x_rot = x_pos_perc * hor_rot_max
     y_rot = y_pos_perc * vert_rot_max * -1
-    # print(x_rot, y_rot)
 
     tcp_rotation_rpy = [y_rot, x_rot, 0]
     # tcp_rotation_rvec = convert_rpy(tcp_rotation_rpy)
     tcp_orient = m3d.Orientation.new_euler(tcp_rotation_rpy, encoding='xyz')
-    # print(tcp_orient)
     position_vec_coords = m3d.Transform(tcp_orient, xyz_coords)
 
     oriented_xyz = origin * position_vec_coords
     oriented_xyz_coord = oriented_xyz.get_pose_vector()
 
     coordinates = oriented_xyz_coord
-    # print("coordinates:", coordinates)
-    # print("_______"*20)
 
     qnear = robot.get_actual_joint_positions()
-    # print(list(qnear))
     next_pose = coordinates
-    # print(next_pose)
-    #print("sending to robot")
     robot.set_realtime_pose(next_pose)
-    #print("sent")
+
     return prev_robot_pos
 
-# Actual Process
-# Move robot to 0 Position
-"""robot.movej(q=[
-    math.radians(-86.62),
-    math.radians(-102.94),
-    math.radians(103),
-    math.radians(179.94),
-    math.radians(-93.38),
-    0], a=acc, v=vel)"""
+"""FACE TRACKING LOOP ____________________________________________________________________"""
 
-robot.movej(q=(math.radians(-218),math.radians(-63),math.radians(-93),math.radians(-20),math.radians(88),math.radians(0)), a=acc, v=vel )
+# initialise robot with URBasic
+print("initialising robot")
+robotModel = URBasic.robotModel.RobotModel()
+robot = URBasic.urScriptExt.UrScriptExt(host=ROBOT_IP,robotModel=robotModel)
+
+robot.reset_error()
+print("robot initialised")
+time.sleep(1)
+
+# Move Robot to the midpoint of the lookplane
+robot.movej(q=(math.radians(-218),
+               math.radians(-63),
+               math.radians(-93),
+               math.radians(-20),
+               math.radians(88),
+               math.radians(0)), a=ACCELERATION, v=VELOCITY )
 
 robot_position = [0,0]
-
-video_asp_ratio  = video_resolution[0] / video_resolution[1]  # Aspect ration of each frame
-video_viewangle_hor = math.radians(25)  # Camera FOV (field of fiew) angle in radians in horizontal direction
-video_viewangle_vert = video_viewangle_hor / video_asp_ratio  #  Camera FOV (field of fiew) angle in radians in vertical direction
-m_per_pixel = 00.00009
-
-#ax.scatter(10,0,0, marker="^")
-i = 0
-#def runloop(i,robot_position):
-kinematics = Kinematic()
-max_x = 0.2
-max_y = 0.2
-hor_rot_max = math.radians(50)
-vert_rot_max = math.radians(25)
-
 origin = set_lookorigin()
 
-robot.init_realtime_control()
-time.sleep(1)
+robot.init_realtime_control()  # starts the realtime control loop on the Universal-Robot Controller
+time.sleep(1) # just a short wait to make sure everything is initialised
+
 try:
     print("starting loop")
     while True:
-        #print("looping")
-        #timer = time.time()
+
         frame = vs.read()
-        #frame = cv2.rotate(frame,)
-        #face_positions, new_frame = find_faces_in_frame(frame)
         face_positions, new_frame = find_faces_dnn(frame)
-        #face_from_center = [0,0]  # TODO: make sure this doesnt block a wandering lookaround
-        #print("frame")
         show_frame(new_frame)
         if len(face_positions) > 0:
             robot_position = move_to_face(face_positions,robot_position)
 
-
-        #frame_with_vis = draw_angle_vis(new_frame,robot_position)
-
-        #show_frame(new_frame)
-        #new_time = time.time() -timer
-        #print(new_time)
-
     print("exiting loop")
 except KeyboardInterrupt:
     print("closing robot connection")
+    # Remember to always close the robot connection, otherwise it is not possible to reconnect
     robot.close()
 
 except:
