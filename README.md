@@ -29,16 +29,18 @@ License: GPLv3
 #### Requirements:
 Universal Robot or URsim-software (tested with UR5cb running polyscope 3.7)
 
-python 3.6
-**Python libraries:**
-opencv-python 4.1.2.30
-numpy 1.18.1
-math3d 3.3.5
-imutils 0.5.3
+python 3.x
 
+**Python libraries:**  
+opencv-python 4.1.2.30   
+numpy 1.18.1  
+math3d 3.3.5  
+imutils 0.5.3  
 
+when used with a raspberry pi and picam:  
+picamera  
+...  
 
-_
 
 TODO
 - [ ] more testing
@@ -49,3 +51,4 @@ TODO
 - [ ] refactoring
 - [ ] documentation
 - [x] comments
+- [ ] add links to libraries and other resources
