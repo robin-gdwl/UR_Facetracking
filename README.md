@@ -36,6 +36,7 @@ python 3.x
 [numpy 1.18.1](https://numpy.org/)  
 [math3d 3.3.5](https://gitlab.com/morlin/pymath3d)   
 [imutils 0.5.3](https://github.com/jrosebr1/imutils)  
+[six 1.15.0](https://pypi.org/project/six/)
 
 when used with a raspberry pi and picam:  
 [picamera](https://picamera.readthedocs.io/en/release-1.13/)  

@@ -6,7 +6,6 @@ see here for a demonstration: https://youtu.be/HHb-5dZoPFQ
 Created by Robin Godwyll
 License: GPL v3 https://www.gnu.org/licenses/gpl-3.0.en.html
 
-
 """
 
 import URBasic
@@ -29,9 +28,16 @@ if sys.platform == "linux":
     from picamera.array import PiRGBArray
     RASPBERRY_BOOL = True
 
-ROBOT_IP = '10.211.55.5'
+ROBOT_IP = '192.168.178.120'
 ACCELERATION = 0.9  # Robot acceleration value
 VELOCITY = 0.8  # Robot speed value
+
+robot_startposition = (math.radians(-218),
+                    math.radians(-63),
+                    math.radians(-93),
+                    math.radians(-20),
+                    math.radians(88),
+                    math.radians(0))
 
 # Path to the face-detection model:
 pretrained_model = cv2.dnn.readNetFromCaffe("MODELS/deploy.prototxt.txt", "MODELS/res10_300x300_ssd_iter_140000.caffemodel")
@@ -130,7 +136,7 @@ def find_faces_dnn(image):
     return face_centers, frame
 
 def show_frame(frame):
-    cv2.imshow('img', frame)
+    cv2.imshow('RobotCamera', frame)
     k = cv2.waitKey(6) & 0xff
 
 """def convert_rpy(angles):
@@ -329,12 +335,7 @@ print("robot initialised")
 time.sleep(1)
 
 # Move Robot to the midpoint of the lookplane
-robot.movej(q=(math.radians(-218),
-               math.radians(-63),
-               math.radians(-93),
-               math.radians(-20),
-               math.radians(88),
-               math.radians(0)), a= ACCELERATION, v= VELOCITY )
+robot.movej(q=robot_startposition, a= ACCELERATION, v= VELOCITY )
 
 robot_position = [0,0]
 origin = set_lookorigin()
