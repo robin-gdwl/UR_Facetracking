@@ -1,7 +1,8 @@
 """
 Face_tracking01
 Python program for realtime face tracking of a Universal Robot (tested with UR5cb)
-see here for a demonstration: https://youtu.be/HHb-5dZoPFQ
+Demonstration Video: https://youtu.be/HHb-5dZoPFQ
+Explanation Video: https://www.youtube.com/watch?v=9XCNE0BmtUg
 
 Created by Robin Godwyll
 License: GPL v3 https://www.gnu.org/licenses/gpl-3.0.en.html
@@ -32,6 +33,7 @@ ROBOT_IP = '192.168.178.120'
 ACCELERATION = 0.9  # Robot acceleration value
 VELOCITY = 0.8  # Robot speed value
 
+# The Joint position the robot starts at
 robot_startposition = (math.radians(-218),
                     math.radians(-63),
                     math.radians(-93),
@@ -47,11 +49,16 @@ video_midpoint = (int(video_resolution[0]/2),
                   int(video_resolution[1]/2))
 video_asp_ratio  = video_resolution[0] / video_resolution[1]  # Aspect ration of each frame
 video_viewangle_hor = math.radians(25)  # Camera FOV (field of fiew) angle in radians in horizontal direction
-#video_viewangle_vert = video_viewangle_hor / video_asp_ratio  #  Camera FOV (field of fiew) angle in radians in vertical direction
-m_per_pixel = 00.00009  # Variable which scales the robot movement from pixels to meters.
 
+# Variable which scales the robot movement from pixels to meters.
+m_per_pixel = 00.00009  
+
+# Size of the robot view-window
+# The robot will at most move this distance in each direction
 max_x = 0.2
 max_y = 0.2
+
+# Maximum Rotation of the robot at the edge of the view window
 hor_rot_max = math.radians(50)
 vert_rot_max = math.radians(25)
 
